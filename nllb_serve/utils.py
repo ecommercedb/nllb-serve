@@ -1,6 +1,5 @@
 from sentence_splitter import split_text_into_sentences
 
-
 ssplit_langs = {
     "cat_Latn": "ca",
     "ces_Latn": "cs",

@@ -19,12 +19,14 @@ from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 from . import log, DEF_MODEL_ID
 
-device = torch.device(torch.cuda.is_available() and 'cuda' or 'cpu')
+if torch.cuda.is_available():
+    device = "cuda:0"
+else:
+    device = "cpu"
 log.info(f'torch device={device}')
 
-#DEF_MODEL_ID = "facebook/nllb-200-distilled-600M"
-DEF_SRC_LNG = 'eng_Latn'
-DEF_TGT_LNG = 'kan_Knda'
+DEF_SRC_LNG = 'spa_Latn'
+DEF_TGT_LNG = 'eng_Latn'
 FLOAT_POINTS = 4
 exp = None
 app = Flask(__name__)
@@ -52,6 +54,7 @@ except:
     log.exception("Error while checking if cuda is available")
     pass
 
+
 def render_template(*args, **kwargs):
     return flask.render_template(*args, environ=os.environ, **kwargs)
 
@@ -66,8 +69,6 @@ def jsonify(obj):
         return {key: jsonify(val) for key, val in obj.items()}
     elif isinstance(obj, list):
         return [jsonify(it) for it in obj]
-    #elif isinstance(ob, np.ndarray):
-    #    return _jsonify(ob.tolist())
     else:
         log.warning(f"Type {type(obj)} maybe not be json serializable")
         return obj
@@ -76,6 +77,7 @@ def jsonify(obj):
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(os.path.join(bp.root_path, 'static', 'favicon'), 'favicon.ico')
+
 
 def attach_translate_route(
     model_id=DEF_MODEL_ID, def_src_lang=DEF_SRC_LNG,
@@ -134,10 +136,10 @@ def attach_translate_route(
         
         if sen_split:
             if not ssplit_lang(src_lang):
-                return "Sentence splitter for this langauges is not availabe", 400 
-            sources, index  = sentence_splitter(src_lang, sources)           
+                return "Sentence splitter for this language is not available", 400
+            sources, index = sentence_splitter(src_lang, sources)
         
-        max_length = 80
+        max_length = 400
         inputs = tokenizer(sources, return_tensors="pt", padding=True)
         inputs = {k:v.to(device) for k, v in inputs.items()}
 
@@ -155,8 +157,8 @@ def attach_translate_route(
             results = output 
                     
         res = dict(source=sources, translation=results,
-                   src_lang = src_lang, tgt_lang=tgt_lang,
-                   time_taken = round(time.time() - st, 3), time_units='s')
+                   src_lang=src_lang, tgt_lang=tgt_lang,
+                   time_taken=round(time.time() - st, 3), time_units='s')
 
         return flask.jsonify(jsonify(res))
 
@@ -177,7 +179,7 @@ def parse_args():
     parser.add_argument("-b", "--base", help="Base prefix path for all the URLs. E.g., /v1")
     parser.add_argument("-mi", "--model_id", type=str, default=DEF_MODEL_ID,
                         help="model ID; see https://huggingface.co/models?other=nllb")
-    parser.add_argument("-msl", "--max-src-len", type=int, default=250,
+    parser.add_argument("-msl", "--max-src-len", type=int, default=2000,
                         help="max source len; longer seqs will be truncated")
     args = vars(parser.parse_args())
     return args
