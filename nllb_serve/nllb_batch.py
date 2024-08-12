@@ -24,7 +24,6 @@ class Translator:
     @lru_cache(maxsize=256)
     def get_tokenizer(self, src_lang):
         log.info(f"Loading tokenizer for {self.model_id}; src_lang={src_lang} ...")
-        #tokenizer = AutoTokenizer.from_pretrained(model_id)
         return AutoTokenizer.from_pretrained(self.model_id, src_lang=src_lang)
 
     def translate_batch(self, src_sents: List[str], src_lang, tgt_lang, max_tgt_length=DEF_MAX_TGT_LEN):
@@ -57,6 +56,7 @@ def main(**args):
     for line in out_lines:
         out.write(line + '\n')
 
+
 def parse_args():
     parser = ArgumentParser(
         prog="nllb-batch",
@@ -75,6 +75,7 @@ def parse_args():
     parser.add_argument('-b', '--batch-size', help='Batch size; number of sentences', type=int, default=10)
     args = vars(parser.parse_args())
     return args
+
 
 if __name__ == '__main__':
     main()

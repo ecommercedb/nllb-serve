@@ -26,6 +26,7 @@ ssplit_langs = {
     "tur_Latn": "tr",
 }
 
+
 def sentence_splitter(src_lang, sources):
     lang = ssplit_langs.get(src_lang)
     index = [0]
@@ -38,6 +39,7 @@ def sentence_splitter(src_lang, sources):
         index.append(len(sentences))
 
     return sentences, index
+
 
 def ssplit_lang(src_lang):
     if src_lang in ssplit_langs:

@@ -3,6 +3,7 @@
 Serves an NLLB MT model using Flask HTTP server
 """
 import os
+import gc
 import sys
 import platform
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
@@ -95,7 +96,6 @@ def attach_translate_route(
     @lru_cache(maxsize=256)
     def get_tokenizer(src_lang=def_src_lang):
         log.info(f"Loading tokenizer for {model_id}; src_lang={src_lang} ...")
-        #tokenizer = AutoTokenizer.from_pretrained(model_id)
         return AutoTokenizer.from_pretrained(model_id, src_lang=src_lang)
 
     @bp.route('/')
@@ -103,7 +103,6 @@ def attach_translate_route(
         args = dict(src_langs=src_langs, tgt_langs=tgt_langs, model_id=model_id,
                     def_src_lang=def_src_lang, def_tgt_lang=def_tgt_lang)
         return render_template('index.html', **args)
-
 
     @bp.route("/translate", methods=["POST", "GET"])
     def translate():
@@ -118,7 +117,7 @@ def attach_translate_route(
             else:
                 args = request.form
 
-        if hasattr(args, 'getlist') :
+        if hasattr(args, 'getlist'):
             sources = args.getlist("source")
         else:
             sources = args.get("source")
@@ -141,11 +140,11 @@ def attach_translate_route(
         
         max_length = 400
         inputs = tokenizer(sources, return_tensors="pt", padding=True)
-        inputs = {k:v.to(device) for k, v in inputs.items()}
+        inputs = {k: v.to(device) for k, v in inputs.items()}
 
         translated_tokens = model.generate(
             **inputs, forced_bos_token_id=tokenizer.lang_code_to_id[tgt_lang],
-            max_length = max_length)
+            max_length=max_length)
         output = tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)
         
         if sen_split:
@@ -159,6 +158,7 @@ def attach_translate_route(
         res = dict(source=sources, translation=results,
                    src_lang=src_lang, tgt_lang=tgt_lang,
                    time_taken=round(time.time() - st, 3), time_units='s')
+        gc.collect()
 
         return flask.jsonify(jsonify(res))
 
