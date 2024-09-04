@@ -13,6 +13,8 @@ DEF_MAX_TGT_LEN = 120
 device = torch.device(torch.cuda.is_available() and 'cuda' or 'cpu')
 log.info(f'torch device={device}')
 
+torch.cuda.set_per_process_memory_fraction(0.666, device=device)
+
 
 class Translator:
 

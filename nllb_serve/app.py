@@ -26,6 +26,8 @@ else:
     device = "cpu"
 log.info(f'torch device={device}')
 
+torch.cuda.set_per_process_memory_fraction(0.666, device=device)
+
 DEF_SRC_LNG = 'spa_Latn'
 DEF_TGT_LNG = 'eng_Latn'
 FLOAT_POINTS = 4
@@ -158,6 +160,7 @@ def attach_translate_route(
         res = dict(source=sources, translation=results,
                    src_lang=src_lang, tgt_lang=tgt_lang,
                    time_taken=round(time.time() - st, 3), time_units='s')
+        torch.cuda.empty_cache()
         gc.collect()
 
         return flask.jsonify(jsonify(res))
